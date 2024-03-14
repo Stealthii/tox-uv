@@ -30,7 +30,7 @@ class UvInstaller(Pip):
         self._env.conf.add_config(
             keys=["uv_resolution"],
             of_type=Literal["highest", "lowest", "lowest-direct"],
-            default=None,  # type: ignore[arg-type]
+            default="highest",
             desc="Define the resolution strategy for uv",
         )
         if self._with_list_deps:  # pragma: no branch
@@ -54,18 +54,16 @@ class UvInstaller(Pip):
         try:
             opts_at = install_command.index("{opts}")
         except ValueError:
+            install_command.extend(("--resolution", uv_resolution))
             if pip_pre:
                 install_command.extend(("--prerelease", "allow"))
-            if uv_resolution:
-                install_command.extend(("--resolution", uv_resolution))
         else:
+            install_command[opts_at] = "--resolution"
+            install_command.insert(opts_at + 1, uv_resolution)
             if pip_pre:
                 install_command[opts_at] = "--prerelease"
                 install_command.insert(opts_at + 1, "allow")
-            if uv_resolution:
-                install_command[opts_at] = "--resolution"
-                install_command.insert(opts_at + 1, uv_resolution)
-            if not (pip_pre or uv_resolution):
+            else:
                 install_command.pop(opts_at)
         return cmd
 
